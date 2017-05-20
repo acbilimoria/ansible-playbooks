@@ -1,0 +1,17 @@
+# Run with:
+# ansible-playbook create-user.yml --extra-vars "target_hosts=new username=jimbob"
+- hosts: "{{target_hosts}}"
+  tasks:
+  - name: Check if user "{{username}}" exists
+    command: id -u "{{username}}"
+    ignore_errors: yes
+    register: user_exists
+
+  - name: Create user "{{username}}" if it doesn't exist!
+    user: 
+      name: "{{username}}"
+      state: present
+      force: yes
+      groups: sudo
+      append: yes
+    when: ("no such user" in user_exists.stderr)
