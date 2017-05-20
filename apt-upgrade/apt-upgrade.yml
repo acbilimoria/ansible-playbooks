@@ -1,0 +1,10 @@
+# Run with:
+# ansible-playbook apt-upgrade.yml --extra-vars "target_hosts=HOSTNAME"
+- hosts: "{{target_hosts}}"
+  tasks:
+  - name: Run the equivalent of "apt-get update; apt-get upgrade"
+    become: true
+    become_method: sudo
+    apt:
+      update_cache: yes
+      upgrade: dist
