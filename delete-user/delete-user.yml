@@ -1,0 +1,15 @@
+# Run with:
+# ansible-playbook delete-user.yml --extra-vars "target_hosts=new username=jimbob"
+- hosts: "{{target_hosts}}"
+  tasks:
+  - name: Check if user "{{username}}" exists
+    command: id -u "{{username}}"
+    ignore_errors: yes
+    register: user_exists
+
+  - name: Delete user "{{username}}" if it exists!
+    user:
+      name: "{{username}}"
+      state: absent
+      remove: yes
+    when: (user_exists.stdout_lines is not none)
