@@ -1,0 +1,22 @@
+# Run with:
+# ansible-playbook unattended-upgrades.yml --extra-vars "target_hosts=HOSTNAME"
+- hosts: "{{target_hosts}}"
+  tasks:
+  - name: Install unattended upgrades.
+    become: true
+    become_method: sudo
+
+    apt:
+      name: unattended-upgrades
+      state: present
+
+  - name: Copy unattended upgrades configuration file.
+    become: true
+    become_method: sudo
+
+    copy:
+      src: 10periodic
+      dest: /etc/apt/apt.conf.d/10periodic
+      owner: root
+      group: root
+      backup: yes
