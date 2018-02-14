@@ -1,0 +1,95 @@
+# Run with:
+# ansible-playbook build.yml --extra-vars "target_hosts=new"
+- hosts: "{{target_hosts}}"
+  become: true
+  become_method: sudo
+  tasks:
+  - name: Set firewall default policy
+    ufw: state=enabled policy=reject
+  
+  - name: Allow ssh from private network
+    ufw: rule=limit port=22
+  
+  - name: Allow port 80
+    ufw: rule=allow port=80
+  
+  - name: Allow port 443
+    ufw: rule=allow port=443
+
+  - name: Create user bt if it doesn't exist!
+    user: 
+      name: bt
+      state: present
+      force: yes
+      groups: sudo
+      append: yes
+
+  - name: Install unattended upgrades.
+    apt:
+      name: unattended-upgrades
+      state: present
+
+  - name: Upload unattended-upgrades file.
+    copy:
+      src: 10periodic
+      dest: /etc/apt/apt.conf.d/10periodic
+      owner: root
+      group: root
+      backup: yes
+
+  - name: Update all packages to the latest version
+    apt:
+      upgrade: dist
+  
+  - name: Run the equivalent of "apt-get update" as a separate step
+    apt:
+      update_cache: yes
+
+  - name: Remove useless packages from the cache
+    apt:
+      autoclean: yes
+
+  - name: Remove dependencies that are no longer required
+    apt:
+      autoremove: yes
+
+  - name: Install basic packages
+    apt:
+      name: "{{ item }}"
+      state: present
+      update_cache: yes
+    with_items:
+      - 'apache2'
+      - 'mysql-server'
+      - 'php'
+      - 'libapache2-mod-php'
+      - 'php-mcrypt'
+      - 'php-mysql'
+      - 'php-curl'
+      - 'php-gd'
+      - 'php-mbstring'
+      - 'php-mcrypt'
+      - 'php-xml'
+      - 'php-xmlrpc'
+
+  - name: Update dir.conf
+    replace:
+      path: /etc/apache2/mods-enabled/dir.conf
+      
+      backup: yes
+
+
+
+
+  - name: Reboot system if required
+    command: shutdown -r now 'Rebooting to complete system upgrade'
+              removes=/var/run/reboot-required
+
+# 5. needed packages: fail2ban, postfix
+# 6. Lock down ssh with a custom SSH config file
+# 10. Create a letsencrypt certificate?
+# 11. Configure Apache2 server
+# 12. Give bt ssh access and disable root ssh access
+# 13. Varnish caching
+# 14. automate backups with cron
+# 15. Reboot Apache2 at the end.
