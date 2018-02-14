@@ -1,5 +1,16 @@
 # Run with:
-# ansible-playbook build.yml --extra-vars "target_hosts=new"
+# ansible-playbook build.yml --extra-vars "target_hosts=new password=password"
+
+- name: Install prerequisites
+  hosts: "{{ target_hosts }}"
+  gather_facts: false
+  become: yes
+  tasks:
+    - name: Install Python 2.x
+      raw: which python || sudo apt-get update && sudo apt-get install -qq -y python-simplejson
+      register: python_check
+      changed_when: not python_check.stdout | search('/usr/bin/python')
+
 - hosts: "{{target_hosts}}"
   become: true
   become_method: sudo
@@ -16,13 +27,39 @@
   - name: Allow port 443
     ufw: rule=allow port=443
 
-  - name: Create user bt if it doesn't exist!
+  - name: Create user bt
     user: 
       name: bt
+      password: "{{ password | password_hash('sha512') }}"
       state: present
       force: yes
       groups: sudo
       append: yes
+
+  - name: Create bt .ssh directory
+    file:
+      path: /home/bt/.ssh
+      state: directory
+      mode: 0700
+
+  - name: Create bt authorized_keys
+    command: cp /root/.ssh/authorized_keys /home/bt/.ssh/
+
+  - name: chown bt .ssh
+    file:
+      path: /home/bt/.ssh
+      state: touch
+      owner: bt
+      group: bt
+      mode: 0700
+
+  - name: chmod bt authorized_keys
+    file:
+      path: /home/bt/.ssh/authorized_keys
+      state: touch
+      owner: bt
+      group: bt
+      mode: 0600
 
   - name: Install unattended upgrades.
     apt:
@@ -71,15 +108,6 @@
       - 'php-mcrypt'
       - 'php-xml'
       - 'php-xmlrpc'
-
-  - name: Update dir.conf
-    replace:
-      path: /etc/apache2/mods-enabled/dir.conf
-      
-      backup: yes
-
-
-
 
   - name: Reboot system if required
     command: shutdown -r now 'Rebooting to complete system upgrade'
