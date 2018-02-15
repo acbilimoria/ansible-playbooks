@@ -74,6 +74,15 @@
       group: root
       backup: yes
 
+  - name: Upload sshd_config.
+    copy:
+      src: sshd_config
+      dest: /etc/ssh/sshd_config
+      owner: root
+      group: root
+      backup: yes
+      mode: 0644
+
   - name: Update all packages to the latest version
     apt:
       upgrade: dist
@@ -109,15 +118,14 @@
       - 'php-xml'
       - 'php-xmlrpc'
 
-  - name: Reboot system if required
-    command: shutdown -r now 'Rebooting to complete system upgrade'
-              removes=/var/run/reboot-required
+#   - name: Reboot system if required
+#     command: shutdown -r now 'Rebooting to complete system upgrade'
+#               removes=/var/run/reboot-required
 
 # 5. needed packages: fail2ban, postfix
-# 6. Lock down ssh with a custom SSH config file
+# 6. Lock down ssh with a custom SSH config file + reboot ssh
 # 10. Create a letsencrypt certificate?
 # 11. Configure Apache2 server
-# 12. Give bt ssh access and disable root ssh access
 # 13. Varnish caching
 # 14. automate backups with cron
 # 15. Reboot Apache2 at the end.
